@@ -1,0 +1,83 @@
+import numpy as np
+import matplotlib.pyplot as plt
+
+# ==========================================
+# 1. 物理参数设定 (对应动量依赖模型下的短时演化)
+# ==========================================
+# 演化时间上限：1.0 * 10^-12 秒 (1 皮秒)
+t_max = 0.2e-12
+N_points = 5000
+t = np.linspace(0, t_max, N_points)
+
+# 频率参数 (rad/s)
+omega_real = 1.847e14   # 振荡实部频率
+# 动量依赖模型(A=10^-2)的虚部频率：
+# 原 kappa=6e-3 对应 omega_imag=3.63e10
+# 现 kappa=1e-2 对应 omega_imag=3.63e10 * (1e-2/6e-3) ≈ 6.05e10
+omega_imag = 6.05e10
+
+# 重空穴 (Heavy Hole) 参数
+drift_v_hh = 1.05e5    # 宏观中心漂移速度 (m/s)
+v_zb_init_hh = 45.8    # 纯 ZB 振荡初始微观幅度 (m/s)
+
+# 轻空穴 (Light Hole) 参数
+drift_v_lh = 7.6027e5  # 宏观中心漂移速度 (m/s)
+v_zb_init_lh = 5.5     # 纯 ZB 振荡初始微观幅度 (m/s)
+
+# ==========================================
+# 2. 动力学演化计算与论文缩放
+# ==========================================
+# 重空穴速度计算与缩放 (转换为 10^5 m/s)
+v_transient_hh = v_zb_init_hh * np.exp(omega_imag * t) * np.cos(omega_real * t)
+velocity_hh_scaled = (drift_v_hh + v_transient_hh) / 1e5
+drift_hh_scaled = drift_v_hh / 1e5
+
+# 轻空穴速度计算与缩放 (转换为 10^5 m/s)
+v_transient_lh = v_zb_init_lh * np.exp(omega_imag * t) * np.cos(omega_real * t)
+velocity_lh_scaled = (drift_v_lh + v_transient_lh) / 1e5
+drift_lh_scaled = drift_v_lh / 1e5
+
+# ==========================================
+# 3. 绘制高质量图表 (仅包含速度曲线)
+# ==========================================
+plt.rcParams.update({
+    "font.family": "serif",
+    "font.size": 12,
+    "axes.labelsize": 14,
+    "axes.titlesize": 16,
+    "xtick.labelsize": 12,
+    "ytick.labelsize": 12,
+})
+
+# 创建上下两格的画板
+fig, (ax1, ax2) = plt.subplots(2, 1, figsize=(10, 8), dpi=150)
+
+# ------------------------------------------
+# 图 1：重空穴速度 (Heavy Hole)
+# ------------------------------------------
+ax1.plot(t * 1e12, velocity_hh_scaled, color='#d62728', linewidth=1.0)
+ax1.set_xlabel(r"t ($10^{-12}$s)")
+ax1.set_ylabel(r"$v_{x_1}$ ($10^5\ \mathrm{m/s}$)")
+ax1.grid(True, linestyle=':', alpha=0.7)
+ax1.set_xlim(0, 0.2)
+
+# 强制关闭科学计数法偏移，手动设置显示范围
+ax1.ticklabel_format(useOffset=False, style='plain', axis='y')
+ax1.set_ylim(drift_hh_scaled - 0.0008, drift_hh_scaled + 0.0008)
+
+# ------------------------------------------
+# 图 2：轻空穴速度 (Light Hole)
+# ------------------------------------------
+ax2.plot(t * 1e12, velocity_lh_scaled, color='#d62728', linewidth=1.0)
+ax2.set_xlabel(r"t ($10^{-12}$s)")
+ax2.set_ylabel(r"$v_{x_2}$ ($10^5\ \mathrm{m/s}$)")
+ax2.grid(True, linestyle=':', alpha=0.7)
+ax2.set_xlim(0, 0.2)
+
+# 强制关闭科学计数法偏移，手动设置显示范围
+ax2.ticklabel_format(useOffset=False, style='plain', axis='y')
+ax2.set_ylim(drift_lh_scaled - 0.0001, drift_lh_scaled + 0.0001)
+
+# 强行增加子图之间的垂直间距，防止文字打架
+plt.tight_layout(h_pad=3.5)
+plt.show()
